@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario Estático con Tabla</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./app.js" defer></script>
+</head>
+<body>
+
+    <h2>Formulario para Agregar Personas</h2>
+
+    <div class="contenedor">
+            <input type="text" id="nombre" placeholder="Nombre" required>
+            <input type="number" id="edad" placeholder="Edad" required>
+            <input type="text" id="ocupacion" placeholder="Ocupación" required>
+            <div class="genero">
+                <label><input type="radio" name="genero" id="masculino" value="Masculino" required> Masculino</label>
+                <label><input type="radio" name="genero" id="femenino" value="Femenino" required> Femenino</label>
+                <label><input type="radio" name="genero" id="otro" value="Otro" required> Otro</label>
+            </div>
+            <button id="Agregar">Agregar Persona</button>
+            <button id="Actualizar">Actualizar</button>
+    </div>
+
+    <h3>Lista de Personas</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Edad</th>
+                <th>Ocupación</th>
+                <th>Genero</th>
+                <th>Accion</th>
+            </tr>
+        </thead>
+        <tbody id="tabla">
+        </tbody>
+    </table>
+
+</body>
+</html>
