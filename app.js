@@ -121,3 +121,23 @@ function actualizarTabla(){
 function guardarLocalStorage(){
   localStorage.setItem("personas",JSON.stringify(personas));
 }
+
+//DESCARGAR XML
+function descargarXML(){
+  let xml= '<?xml version="1.0" encoding="UTF-8"?>';
+  xml += '<personas>';
+  personas.forEach(p =>{
+    xml+= `<persona>
+        <nombre>${p.nombre}</nombre>
+        <edad>${p.edad}</edad>
+        <ocupacion>${p.ocupacion}</ocupacion>
+        <genero>${p.genero}</genero>
+        </persona>`;
+  })
+  xml+= '</personas>';
+  const blob= new Blob([xml],{type:'application/xml'});
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+
+}
