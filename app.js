@@ -137,7 +137,23 @@ function descargarXML(){
   xml+= '</personas>';
   const blob= new Blob([xml],{type:'application/xml'});
 
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
+  const a = document.createElement("a"); //creamos elemento enlace a
+  a.href = URL.createObjectURL(blob); //asignamos url
+  a.download = "personas.xml"; //asignamos nombre y extension al archivo para que no descargue un sin nombre
+  a.click(); //hacemos evento click para disparar el evento
 
 }
+
+//IMPORTAR XML
+
+//event.target
+//event.target.
+document.getElementById("fileInput").addEventListener("change", function(event){
+   const file = event.target.files[0];
+      if(!file){ 
+        alert("No se selecciono ningun archivo"); 
+        return
+      }
+   const reader = new FileReader();
+
+});

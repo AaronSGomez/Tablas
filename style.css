@@ -12,6 +12,14 @@ body {
   margin: auto;
   margin-top: 20px;
 }
+.contenedorxml{
+  padding: 10px;
+  height: 50px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
 input, button {
   margin: 10px;
   padding: 8px;
@@ -27,10 +35,31 @@ button {
 button:hover {
   background: #218838;
 }
-.descargar{
+.XML{
   width: 200px;
+  padding: 15px;
+  height: 100%;
   background: #5408e0;
 }
+#fileinput {
+  box-sizing: border-box;
+  background-color: #5408e0;
+  padding: 0;
+  margin: 0;
+  height: 50px;
+  width: 400px;
+  color: aliceblue;
+  cursor: pointer;
+  text-align: center;
+  line-height: 50px;
+
+}
+
+#fileinput:hover {
+  background-color: #218838;
+}
+
+
 table {
   width: 80%;
   margin: 20px auto;
