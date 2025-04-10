@@ -148,12 +148,33 @@ function descargarXML(){
 
 //event.target
 //event.target.
-document.getElementById("fileInput").addEventListener("change", function(event){
+document.getElementById("fileInput").addEventListener("change", function(event){ //actuador coge fichero
    const file = event.target.files[0];
       if(!file){ 
         alert("No se selecciono ningun archivo"); 
         return
       }
    const reader = new FileReader();
+   reader.readAsText(file);
+   reader.onload = function(e){ //actuamos sobre el archivo, el contenido leido
+      const xmlString = e.target.result;
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlString,'application/xml');
+      const personas2 = xmlDoc.getElementsByTagName("persona");
+      personas = [];
+
+      for(let i=0; i<personas2.length; i++){
+       const p= personas2[i];
+       let nombre= p.getElementsByTagName("nombre")[0]?.textContent || "";
+       let edad= p.getElementsByTagName("edad")[0]?.textContent || "";
+       let ocupacion= p.getElementsByTagName("ocupacion")[0]?.textContent || "";
+       let genero= p.getElementsByTagName("genero")[0]?.textContent || "";
+       personas.push({nombre,edad,ocupacion,genero});
+      }
+
+      guardarLocalStorage();
+      actualizarTabla();
+      alert("Datos cargados");
+   }
 
 });
