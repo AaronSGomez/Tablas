@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Personas con XML y localStorage</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f5f5f5;
+    }
+
+    .contenedor {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+      width: 350px;
+      margin: auto;
+      margin-top: 20px;
+    }
+
+    input, button {
+      margin: 10px;
+      padding: 8px;
+      width: 90%;
+      font-size: 16px;
+    }
+
+    button {
+      background: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #218838;
+    }
+
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid black;
+      padding: 8px;
+    }
+
+    th {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .genero {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .genero label {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .edit-button {
+      background: yellow;
+      color: black;
+    }
+
+    .delete-button {
+      background: red;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Formulario para Agregar Personas</h2>
+
+  <div class="contenedor">
+    <!-- Formulario de entrada -->
+    <input type="text" id="nombre" placeholder="Nombre">
+    <input type="number" id="edad" placeholder="Edad">
+    <input type="text" id="ocupacion" placeholder="Ocupación">
+
+    <div class="genero">
+      <!-- Selección de género -->
+      <label><input type="radio" name="genero" value="Masculino">Masculino</label>
+      <label><input type="radio" name="genero" value="Femenino">Femenino</label>
+      <label><input type="radio" name="genero" value="Otros">Otros</label>
+    </div>
+
+    <button id="agregar">Agregar Persona</button>
+    <button id="actualizar" style="display: none;">Actualizar Persona</button>
+  </div>
+
+  <!-- Botones para exportar/importar XML -->
+  <div>
+    <button onclick="descargarXML()">Descargar XML</button>
+    <input type="file" accept=".xml" id="fileInput">
+  </div>
+
+  <h3>Lista de Personas</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Edad</th>
+        <th>Ocupación</th>
+        <th>Género</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody id="tablaPersonas"></tbody>
+  </table>
+
+  <script>
+    // Recuperamos los datos previamente guardados en localStorage (si existen), si no, usamos un array vacío
+    let personas = [];
+    let editIndex = -1;
+
+    // Al cargar la página, mostramos la tabla con los datos cargados del localStorage
+    window.onload = () => {
+      fetch('obtener_personas.php')
+    .then(response => response.json())
+    .then(data => {
+      personas = data.map(p => ({
+        id: parseInt(p.id),
+        nombre: p.nombre,
+        edad: parseInt(p.edad),
+        ocupacion: p.ocupacion,
+        genero: p.genero
+      }));
+      
+      actualizarTabla();
+    })
+    .catch(error => {
+      console.error("Error al cargar desde la base de datos:", error);
+      // Si falla, cargar desde localStorage
+      personas = [];
+      actualizarTabla();
+    });
+    };
+
+    // Al hacer clic en "Agregar", tomamos los datos del formulario y los añadimos al array
+    document.getElementById("agregar").addEventListener("click", function () {
+      let persona = obtenerDatosFormulario();
+      if (!persona) return;
+
+      personas.push(persona);
+      
+      guardarEnBaseDeDatos(persona);
+      limpiarFormulario();
+      actualizarTabla();
+    });
+
+    // Al hacer clic en "Actualizar", reemplazamos la persona editada y guardamos
+    document.getElementById("actualizar").addEventListener("click", function () {
+      let persona = obtenerDatosFormulario();
+      if (!persona) return;
+
+      persona.id = personas[editIndex].id; // Mantenemos el ID
+      personas[editIndex] = persona;
+      actualizarEnBaseDeDatos(persona); 
+     
+      limpiarFormulario();
+      actualizarTabla();
+
+      document.getElementById("actualizar").style.display = "none";
+      document.getElementById("agregar").style.display = "block";
+      editIndex = -1;
+    });
+
+    // Función para obtener los datos del formulario y validar que no estén vacíos
+    function obtenerDatosFormulario() {
+      let nombre = document.getElementById("nombre").value.trim();
+      let edad = document.getElementById("edad").value.trim();
+      let ocupacion = document.getElementById("ocupacion").value.trim();
+      let generoSeleccionado = document.querySelector('input[name="genero"]:checked');
+      let genero = generoSeleccionado ? generoSeleccionado.value : "No seleccionado";
+
+      if (!nombre || !edad || !ocupacion) {
+        alert("Por favor, completa todos los campos.");
+        return null;
+      }
+
+      return { nombre, edad, ocupacion, genero };
+    }
+
+
+    // Muestra los datos en la tabla HTML
+    function actualizarTabla() {
+      let tabla = document.getElementById("tablaPersonas");
+      tabla.innerHTML = "";
+
+      personas.forEach((p, i) => {
+        let fila = `
+          <tr>
+            <td>${p.nombre}</td>
+            <td>${p.edad}</td>
+            <td>${p.ocupacion}</td>
+            <td>${p.genero}</td>
+            <td>
+              <button class="edit-button" onclick="editarPersona(${i})">Modificar</button>
+              <button class="delete-button" onclick="borrarPersona(${i})">Eliminar</button>
+            </td>
+          </tr>`;
+        tabla.innerHTML += fila;
+      });
+    }
+
+    // Cargar datos al formulario para editar
+    function editarPersona(index) {
+      let persona = personas[index];
+      document.getElementById("nombre").value = persona.nombre;
+      document.getElementById("edad").value = persona.edad;
+      document.getElementById("ocupacion").value = persona.ocupacion;
+
+      document.querySelectorAll('input[name="genero"]').forEach(radio => {
+        radio.checked = radio.value === persona.genero;
+      });
+
+      document.getElementById("agregar").style.display = "none";
+      document.getElementById("actualizar").style.display = "block";
+      editIndex = index;
+    }
+
+    // Eliminar persona y actualizar localStorage
+    function borrarPersona(index) {
+      const persona = personas[index];
+      if (persona.id) eliminarEnBaseDeDatos(persona.id);
+
+      personas.splice(index, 1);
+      
+      actualizarTabla();
+    }
+
+    // Limpia el formulario
+    function limpiarFormulario() {
+      document.getElementById("nombre").value = "";
+      document.getElementById("edad").value = "";
+      document.getElementById("ocupacion").value = "";
+      let generoSeleccionado = document.querySelector('input[name="genero"]:checked');
+      if (generoSeleccionado) generoSeleccionado.checked = false;
+    }
+
+    // Función para exportar los datos en un archivo XML
+    function descargarXML() {
+      // Creamos la estructura del XML en formato texto
+      let xml = '<?xml version="1.0" encoding="UTF-8"?><personas>';
+      personas.forEach(p => {
+        xml += `<persona>
+          <nombre>${p.nombre}</nombre>
+          <edad>${p.edad}</edad>
+          <ocupacion>${p.ocupacion}</ocupacion>
+          <genero>${p.genero}</genero>
+        </persona>`;
+      });
+      xml += '</personas>';
+
+      // Creamos un objeto Blob, que representa un archivo en memoria
+      // Blob (Binary Large Object) permite crear un archivo con contenido y tipo MIME definido
+      const blob = new Blob([xml], { type: "application/xml" });
+
+      // Creamos un enlace temporal para descargar el archivo
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); // Creamos una URL que apunta al Blob en memoria
+      a.download = "personas.xml"; // Nombre del archivo a descargar
+      a.click(); // Simulamos un clic para iniciar la descarga
+    }
+
+    // Función para cargar un archivo XML desde el PC del usuario
+    document.getElementById("fileInput").addEventListener("change", function (event) {
+      const file = event.target.files[0]; // Obtenemos el archivo seleccionado
+
+      if (!file) {
+        alert("No se seleccionó ningún archivo.");
+        return;
+      }
+
+      const reader = new FileReader(); // FileReader nos permite leer archivos del sistema del usuario
+      reader.readAsText(file); // Leemos el contenido del archivo como texto plano
+      // Cuando termina de leer el archivo:
+      reader.onload = function (e) {
+        const xmlString = e.target.result; // Obtenemos el contenido del archivo como texto
+
+        const parser = new DOMParser(); // DOMParser convierte el texto XML en una estructura DOM
+        const xmlDoc = parser.parseFromString(xmlString, "application/xml");
+
+        const personaNodes = xmlDoc.getElementsByTagName("persona");
+        personas = []; // Vaciamos el array actual y cargamos desde el XML
+
+        for (let i = 0; i < personaNodes.length; i++) {
+          const p = personaNodes[i];
+          let nombre = p.getElementsByTagName("nombre")[0]?.textContent || "";
+          let edad = p.getElementsByTagName("edad")[0]?.textContent || "";
+          let ocupacion = p.getElementsByTagName("ocupacion")[0]?.textContent || "";
+          let genero = p.getElementsByTagName("genero")[0]?.textContent || "";
+
+          personas.push({ nombre, edad, ocupacion, genero }); // Añadimos cada persona al array
+        }
+
+        
+        actualizarTabla(); // Actualizamos la tabla en pantalla
+        alert("Datos cargados desde el archivo XML correctamente.");
+      };
+
+      
+    });
+
+    function guardarEnBaseDeDatos(persona, callback) {
+      fetch('guardar_persona.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `nombre=${encodeURIComponent(persona.nombre)}&edad=${persona.edad}&ocupacion=${encodeURIComponent(persona.ocupacion)}&genero=${encodeURIComponent(persona.genero)}`
+      })
+      .then(response => response.text())
+      .then(data => {
+        persona.id = parseInt(data); // Asignamos el id retornado
+        if (callback) callback();
+      })
+      .catch(error => {
+        console.error("Error al guardar en la base de datos:", error);
+      });
+    }
+
+    function eliminarEnBaseDeDatos(id) {
+      fetch('eliminar_persona.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `id=${id}`
+      })
+      .then(response => response.text())
+      .then(data => console.log(data))
+      .catch(error => console.error("Error al eliminar:", error));
+    }
+
+    function actualizarEnBaseDeDatos(persona) {
+  fetch('actualizar_persona.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `id=${persona.id}&nombre=${encodeURIComponent(persona.nombre)}&edad=${persona.edad}&ocupacion=${encodeURIComponent(persona.ocupacion)}&genero=${encodeURIComponent(persona.genero)}`
+      })
+      .then(response => response.text())
+      .then(data => console.log(data))
+      .catch(error => console.error("Error al actualizar:", error));
+    }
+
+  </script>
+</body>
+</html>
+
